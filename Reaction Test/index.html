@@ -11,28 +11,34 @@
 	<body>
 		<h1>Reaction Test</h1>
 
-		<div id="game">
-			<p id="instruction">Press start</p>
-			<button id="startBtn">Start</button>
-			<div id="traffic-lights">
-				<img
-					src="images/red-traffic-light.svg"
-					id="left-light"
-					alt="Left traffic light"
-			/>
-			<img
-				src="images/red-traffic-light.svg"
-				id="right-light"
-				alt="Right traffic light"
-			/>
-		</div>
-		<div id="scoreboard">
-			<h2>Resultaten</h2>
-			<p id="round-number">Ronde: 1/10</p>
-			<ul id="results-list"></ul>
-			<p id="average-score"></p>
-            <p id="average-wrong"></p>
-            <p id="average-too-early"></p>
+		<div class="row-container">
+			<div class="sidebar">
+				<h2>Resultaten</h2>
+				<ul id="results-list"></ul>
+			</div>
+			<div id="game">
+				<p id="instruction">Press start</p>
+				<button id="startBtn">Start</button>
+				<div id="traffic-lights">
+					<img
+						src="images/red-traffic-light.svg"
+						id="left-light"
+						alt="Left traffic light"
+					/>
+					<img
+						src="images/red-traffic-light.svg"
+						id="right-light"
+						alt="Right traffic light"
+					/>
+				</div>
+				<p id="round-number">Ronde: 1/10</p>
+			</div>
+			<div class="sidebar">
+				<h2>Statistieken</h2>
+				<p id="average-score"></p>
+				<p id="average-wrong"></p>
+				<p id="average-too-early"></p>
+			</div>
 		</div>
 	</body>
 </html>

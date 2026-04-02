@@ -1,25 +1,57 @@
 body {
 	font-family: Arial;
 	text-align: center;
-	margin-top: 100px;
+	min-height: 100vh;
+	margin-top: 1rem;
 }
 
 #instruction {
-	font-size: 40px;
-	margin: 40px;
+	font-size: 2rem;
 }
 
 button {
-	padding: 10px 20px;
-	font-size: 20px;
+	padding: 1rem;
+	border-radius: 0.5rem;
+	cursor: pointer;
+	margin: 1rem 0;
 }
 
 #traffic-lights {
 	display: flex;
 	justify-content: center;
 	gap: 20px;
+	margin-bottom: 1rem;
 }
 
 #traffic-lights img {
 	width: 100px;
+}
+
+.row-container {
+	display: flex;
+	justify-content: center;
+	align-items: flex-start;
+	gap: 2rem;
+	margin-top: 2rem;
+}
+#game {
+	min-width: 50%;
+	padding: 2rem;
+	box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+.sidebar {
+	width: 25%;
+	margin: 0 2rem;
+	padding: 1rem;
+	box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+.sidebar p {
+	text-align: left;
+}
+
+#results-list li {
+	list-style-type: none;
+	padding: 0;
 }

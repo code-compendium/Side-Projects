@@ -13,7 +13,7 @@ let direction;
 let isWaiting = false;
 let timeoutId;
 let currentRound = 1;
-const maxRounds = 3;
+const maxRounds = 10;
 let history = [];
 
 startBtn.addEventListener("click", startGame);
@@ -58,6 +58,8 @@ function resetGame() {
 	history = [];
 	resultsList.innerHTML = "";
 	averageScore.textContent = "";
+	averageWrong.textContent = "";
+	averageTooEarly.textContent = "";
 	startTime = null;
 	direction = null;
 }
