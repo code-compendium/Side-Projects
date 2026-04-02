@@ -16,6 +16,8 @@ let currentRound = 1;
 const maxRounds = 10;
 let history = [];
 
+roundNumber.textContent = `Ronde: ${currentRound}/${maxRounds}`;
+
 startBtn.addEventListener("click", startGame);
 
 function startGame() {
@@ -55,6 +57,7 @@ function resetGame() {
 	instruction.textContent = "Press start";
 	startBtn.textContent = "Start";
 	currentRound = 1;
+	roundNumber.textContent = `Ronde: ${currentRound}/${maxRounds}`;
 	history = [];
 	resultsList.innerHTML = "";
 	averageScore.textContent = "";
@@ -117,6 +120,7 @@ const validKeys = {
 };
 
 document.addEventListener("keydown", (event) => {
+	if (event.repeat) return;
 	const playerChoice = validKeys[event.key];
 	if (!isWaiting && !startTime) return;
 	if (isWaiting) {

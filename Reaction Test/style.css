@@ -46,7 +46,8 @@ button {
 	box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
 }
 
-.sidebar p {
+.sidebar p,
+.sidebar ul li {
 	text-align: left;
 }
 
