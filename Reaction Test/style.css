@@ -13,3 +13,13 @@ button {
 	padding: 10px 20px;
 	font-size: 20px;
 }
+
+#traffic-lights {
+	display: flex;
+	justify-content: center;
+	gap: 20px;
+}
+
+#traffic-lights img {
+	width: 100px;
+}

@@ -1,0 +1,16 @@
+<svg width="120" height="320" viewBox="0 0 120 320" xmlns="http://www.w3.org/2000/svg">
+  <!-- Behuizing van het stoplicht -->
+  <rect x="10" y="10" width="100" height="300" rx="30" fill="#2c3e50" stroke="#1a252f" stroke-width="5"/>
+  
+  <!-- Bovenste Lamp (Rood - AAN) -->
+  <circle cx="60" cy="65" r="35" fill="#ff3b30" stroke="#ff8b85" stroke-width="4"/>
+  
+  <!-- Middelste Lamp (Geel - UIT) -->
+  <circle cx="60" cy="160" r="35" fill="#4a4a00" stroke="#222" stroke-width="2"/>
+  
+  <!-- Onderste Lamp (Groen - UIT) -->
+  <circle cx="60" cy="255" r="35" fill="#004a00" stroke="#222" stroke-width="2"/>
+  
+  <!-- Glans/reflectie (Voor een 3D effect) -->
+  <rect x="15" y="15" width="40" height="290" rx="20" fill="#ffffff" opacity="0.1" />
+</svg>
