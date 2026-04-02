@@ -5,13 +5,15 @@ const rightLight = document.getElementById("right-light");
 const roundNumber = document.getElementById("round-number");
 const resultsList = document.getElementById("results-list");
 const averageScore = document.getElementById("average-score");
+const averageWrong = document.getElementById("average-wrong");
+const averageTooEarly = document.getElementById("average-too-early");
 
 let startTime;
 let direction;
 let isWaiting = false;
 let timeoutId;
 let currentRound = 1;
-const maxRounds = 10;
+const maxRounds = 3;
 let history = [];
 
 startBtn.addEventListener("click", startGame);
@@ -54,22 +56,47 @@ function resetGame() {
 	startBtn.textContent = "Start";
 	currentRound = 1;
 	history = [];
+	resultsList.innerHTML = "";
+	averageScore.textContent = "";
 	startTime = null;
 	direction = null;
 }
 
 function endGame() {
+	const goedeRondes = history.filter((round) => round.uitslag === "Goed");
+	const fouteRondes = history.filter((round) => round.uitslag === "Fout");
+	const vroegeRondes = history.filter((round) => round.uitslag === "Te vroeg");
 	instruction.textContent = "Game over!";
 	startBtn.textContent = "Play again";
 	startBtn.disabled = false;
 	resultsList.innerHTML = "";
 	history.forEach((round) => {
+		const displayTime = round.tijd === "-" ? "-" : round.tijd + " ms";
 		const li = document.createElement("li");
-		li.textContent = `Ronde ${round.ronde}: ${round.uitslag} (${round.tijd} ms)`;
+		li.textContent = `Ronde ${round.ronde}: ${round.uitslag} (${displayTime})`;
 		resultsList.appendChild(li);
 	});
-	const goodReactionTimes = history.filter((round) => round.tijd !== null);
-	averageScore.textContent = `Gemiddelde reactietijd: ${Math.round(goodReactionTimes.reduce((acc, round) => acc + round.tijd, 0) / goodReactionTimes.length)} ms`;
+	let gemiddeldeFout = 0;
+	if (fouteRondes.length > 0) {
+		gemiddeldeFout = Math.round(
+			fouteRondes.reduce((acc, round) => acc + round.tijd, 0) / fouteRondes.length,
+		);
+	}
+	let gemiddeldeTeVroeg = 0;
+	if (vroegeRondes.length > 0) {
+		gemiddeldeTeVroeg = Math.round(
+			vroegeRondes.reduce((acc, round) => acc + round.tijd, 0) / vroegeRondes.length,
+		);
+	}
+	let average = 0;
+	if (goedeRondes.length > 0) {
+		average = Math.round(
+			goedeRondes.reduce((acc, round) => acc + round.tijd, 0) / goedeRondes.length,
+		);
+	}
+	averageScore.textContent = `Gemiddelde reactietijd: ${average} ms`;
+	averageWrong.textContent = `Gemiddelde foute reactietijd: ${gemiddeldeFout} ms`;
+	averageTooEarly.textContent = `Aantal keer te vroeg gedrukt: ${vroegeRondes.length}`;
 }
 
 function finishRound() {
@@ -94,22 +121,22 @@ document.addEventListener("keydown", (event) => {
 		clearTimeout(timeoutId);
 		isWaiting = false;
 		instruction.textContent = "Too early!";
-		history.push({ ronde: currentRound, uitslag: "Te vroeg", tijd: null });
+		history.push({ ronde: currentRound, uitslag: "Te vroeg", tijd: "-" });
 		finishRound();
 		return;
 	}
-	if (playerChoice === direction) {
-		const reactionTime = Date.now() - startTime;
 
+	const reactionTime = Date.now() - startTime;
+	if (playerChoice === direction) {
 		instruction.textContent = `Reaction time: ${reactionTime} ms`;
 		history.push({ ronde: currentRound, uitslag: "Goed", tijd: reactionTime });
 		finishRound();
 		startTime = null;
 		return;
 	}
-	if (playerChoice) {
+	if (playerChoice && playerChoice !== direction) {
 		instruction.textContent = "Wrong key!";
-		history.push({ ronde: currentRound, uitslag: "Fout", tijd: null });
+		history.push({ ronde: currentRound, uitslag: "Fout", tijd: reactionTime });
 		finishRound();
 		return;
 	}
