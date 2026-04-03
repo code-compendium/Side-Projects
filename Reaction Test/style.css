@@ -55,6 +55,8 @@ body {
 
 #traffic-lights img {
 	width: 100px;
+	height: auto;
+	aspect-ratio: 120 / 320;
 }
 
 .row-container {
