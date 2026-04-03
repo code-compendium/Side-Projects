@@ -14,8 +14,9 @@ let startTime;
 let direction;
 let isWaiting = false;
 let timeoutId;
+let roundActive = false;
 let currentRound = 1;
-const maxRounds = 3;
+const maxRounds = 10;
 let history = [];
 let playerName = "";
 
@@ -32,6 +33,7 @@ function startGame() {
 }
 
 function startRound() {
+	roundActive = true;
 	isWaiting = true;
 	instruction.textContent = "Wait...";
 	const delay = Math.random() * 3000 + 1000;
@@ -126,6 +128,13 @@ const validKeys = {
 	ArrowRight: "right",
 };
 
+function flashEffect(className) {
+	document.body.classList.remove("error-flash", "success-flash");
+	void document.body.offsetWidth;
+	document.body.classList.add(className);
+}
+
+// Event Listerners
 playerNameInput.addEventListener("keydown", (event) => {
 	if (event.key === "Enter") {
 		event.stopPropagation();
@@ -136,29 +145,36 @@ playerNameInput.addEventListener("keydown", (event) => {
 });
 
 document.addEventListener("keydown", (event) => {
+	if (!roundActive) return;
 	if (event.repeat) return;
 	const playerChoice = validKeys[event.key];
 	if (!isWaiting && !startTime) return;
 	if (isWaiting) {
 		clearTimeout(timeoutId);
 		isWaiting = false;
+		roundActive = false;
 		instruction.textContent = "Too early!";
 		history.push({ ronde: currentRound, uitslag: "Te vroeg", tijd: "-" });
+		flashEffect("error-flash");
 		finishRound();
 		return;
 	}
 
 	const reactionTime = Date.now() - startTime;
 	if (playerChoice === direction) {
+		roundActive = false;
 		instruction.textContent = `Reaction time: ${reactionTime} ms`;
 		history.push({ ronde: currentRound, uitslag: "Goed", tijd: reactionTime });
+		flashEffect("success-flash");
 		finishRound();
 		startTime = null;
 		return;
 	}
 	if (playerChoice && playerChoice !== direction) {
+		roundActive = false;
 		instruction.textContent = "Wrong key!";
 		history.push({ ronde: currentRound, uitslag: "Fout", tijd: reactionTime });
+		flashEffect("error-flash");
 		finishRound();
 		return;
 	}

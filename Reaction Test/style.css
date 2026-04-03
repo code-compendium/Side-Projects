@@ -87,3 +87,30 @@ body {
 	list-style-type: none;
 	padding: 0;
 }
+
+/* Animations */
+@keyframes flash-red {
+	0% {
+		background-color: red;
+	}
+	100% {
+		background-color: transparent;
+	}
+}
+
+@keyframes flash-green {
+	0% {
+		background-color: green;
+	}
+	100% {
+		background-color: transparent;
+	}
+}
+
+.error-flash {
+	animation: flash-red 0.5s ease-out;
+}
+
+.success-flash {
+	animation: flash-green 0.5s ease-out;
+}
