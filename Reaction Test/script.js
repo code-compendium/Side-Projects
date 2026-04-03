@@ -1,28 +1,33 @@
-const startBtn = document.getElementById("startBtn");
-const instruction = document.getElementById("instruction");
-const leftLight = document.getElementById("left-light");
-const rightLight = document.getElementById("right-light");
-const roundNumber = document.getElementById("round-number");
-const resultsList = document.getElementById("results-list");
-const averageScore = document.getElementById("average-score");
-const averageWrong = document.getElementById("average-wrong");
-const averageTooEarly = document.getElementById("average-too-early");
+const startBtn = document.querySelector("#startBtn");
+const instruction = document.querySelector("#instruction");
+const leftLight = document.querySelector("#left-light");
+const rightLight = document.querySelector("#right-light");
+const roundNumber = document.querySelector("#round-number");
+const resultsList = document.querySelector("#results-list");
+const averageScore = document.querySelector("#average-score");
+const averageWrong = document.querySelector("#average-wrong");
+const averageTooEarly = document.querySelector("#average-too-early");
+const resultsTitle = document.querySelector("#results-title");
+const playerNameInput = document.querySelector("#player-name");
 
 let startTime;
 let direction;
 let isWaiting = false;
 let timeoutId;
 let currentRound = 1;
-const maxRounds = 10;
+const maxRounds = 3;
 let history = [];
+let playerName = "";
 
 roundNumber.textContent = `Ronde: ${currentRound}/${maxRounds}`;
 
 startBtn.addEventListener("click", startGame);
 
 function startGame() {
-	startBtn.disabled = true;
 	resetGame();
+	playerName = playerNameInput.value || "Anonymous Player";
+	playerNameInput.disabled = true;
+	startBtn.disabled = true;
 	startRound();
 }
 
@@ -74,6 +79,8 @@ function endGame() {
 	instruction.textContent = "Game over!";
 	startBtn.textContent = "Play again";
 	startBtn.disabled = false;
+	resultsTitle.textContent = `${playerName}'s Results`;
+	playerNameInput.disabled = false;
 	resultsList.innerHTML = "";
 	history.forEach((round) => {
 		const displayTime = round.tijd === "-" ? "-" : round.tijd + " ms";
@@ -118,6 +125,15 @@ const validKeys = {
 	ArrowLeft: "left",
 	ArrowRight: "right",
 };
+
+playerNameInput.addEventListener("keydown", (event) => {
+	if (event.key === "Enter") {
+		event.stopPropagation();
+		if (!isWaiting && !startTime) {
+			startGame();
+		}
+	}
+});
 
 document.addEventListener("keydown", (event) => {
 	if (event.repeat) return;

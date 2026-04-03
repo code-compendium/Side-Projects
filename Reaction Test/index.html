@@ -3,7 +3,7 @@
 	<head>
 		<meta charset="UTF-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-		<title>Document</title>
+		<title>Reaction Test</title>
 		<link rel="stylesheet" href="normalize.css" />
 		<link rel="stylesheet" href="style.css" />
 		<script src="script.js" defer></script>
@@ -13,12 +13,15 @@
 
 		<div class="row-container">
 			<div class="sidebar">
-				<h2>Resultaten</h2>
+				<h2 id="results-title">Results</h2>
 				<ul id="results-list"></ul>
 			</div>
 			<div id="game">
 				<p id="instruction">Press start</p>
-				<button id="startBtn">Start</button>
+				<div class="controls-row">
+					<input type="text" id="player-name" placeholder="Enter your name" />
+					<button id="startBtn">Start</button>
+				</div>
 				<div id="traffic-lights">
 					<img
 						src="images/red-traffic-light.svg"
@@ -34,7 +37,7 @@
 				<p id="round-number"></p>
 			</div>
 			<div class="sidebar">
-				<h2>Statistieken</h2>
+				<h2>Statistics</h2>
 				<p id="average-score"></p>
 				<p id="average-wrong"></p>
 				<p id="average-too-early"></p>

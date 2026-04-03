@@ -9,11 +9,41 @@ body {
 	font-size: 2rem;
 }
 
-button {
+.controls-row {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	gap: 1rem;
+	margin: 1rem 0;
+}
+
+.controls-row button {
 	padding: 1rem;
 	border-radius: 0.5rem;
 	cursor: pointer;
-	margin: 1rem 0;
+	background-color: #34c759;
+	transition: transform 0.2s ease-in-out;
+}
+
+.controls-row button:hover:not(:disabled) {
+	background-color: #28a745;
+	transform: translateY(-5px);
+}
+
+#player-name {
+	padding: 1rem;
+	border-radius: 0.5rem;
+	outline: none;
+}
+
+#player-name:focus {
+	box-shadow: 0 0 20px rgba(4, 131, 216, 0.782);
+}
+
+#player-name:disabled,
+#startBtn:disabled {
+	cursor: not-allowed;
+	background-color: #ccc;
 }
 
 #traffic-lights {
