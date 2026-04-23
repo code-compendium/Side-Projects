@@ -103,16 +103,6 @@ export function playCardSelect() {
 	playEffect(cardSelectUrl, 0.5);
 }
 
-// Lock character
-export function playLock() {
-	playEffect(heavyStrikeUrl, 0.6);
-}
-
-// Unlock character
-export function playUnlock() {
-	playEffect(strikeUrl, 0.4);
-}
-
 // Klikken op "Fight"
 export function playFightClick() {
 	playEffect(fightStartUrl, 0.7);

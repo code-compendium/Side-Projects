@@ -16,8 +16,6 @@ import {
 	playFatalityStart,
 	playWinner,
 	playFatalityFail,
-	playLock,
-	playUnlock,
 } from "./sounds.js";
 
 // Winst-lijnen die we vaker gaan gebruiken
@@ -302,10 +300,8 @@ function App() {
 		setPlayers((prev) => {
 			const isCurrentlyLocked = prev[symbol].locked;
 			if (isCurrentlyLocked) {
-				playUnlock();
 				return { ...prev, [symbol]: { ...prev[symbol], locked: false } };
 			} else {
-				playLock();
 				let newState = { ...prev, [symbol]: { ...prev[symbol], locked: true } };
 				// Als de andere speler zijn character nog NIET gelocked heeft, én op hetzelfde personage zat als wat we net locken:
 				// push die andere speler dan direct naar een ander beschikbaar personage.
