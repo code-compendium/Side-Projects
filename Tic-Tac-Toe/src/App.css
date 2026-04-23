@@ -1,42 +1,377 @@
+body {
+	margin: 0;
+	background-color: #111;
+}
+
 .game-container {
 	display: flex;
 	flex-direction: column;
 	align-items: center;
-	padding: 2rem;
-	min-height: 100vh;
-	background-color: #111;
+	justify-content: center;
+	height: 100vh;
+	max-height: 100vh;
+	overflow: hidden;
+	padding: 0.5rem 1rem;
+	background-color: transparent;
 	color: #eee;
 	font-family: "Segoe UI", sans-serif;
 	transition: background-color 0.5s ease;
+	box-sizing: border-box;
+	gap: 0.4rem;
+	position: relative;
+	z-index: 1;
 }
 
+/* ===================== TITELS ===================== */
 .mk-title {
-	font-size: 2.5rem;
+	font-size: 1.6rem;
 	letter-spacing: 5px;
 	text-transform: uppercase;
 	color: #ff4500;
 	text-shadow:
-		0 0 20px #ff0000,
-		0 0 40px #8b0000;
-	margin-bottom: 0.2rem;
+		0 0 15px #ff0000,
+		0 0 30px #8b0000;
+	margin: 0;
 }
 
 .mk-subtitle {
 	color: #888;
-	margin-bottom: 2rem;
-	font-size: 1rem;
+	margin: 0;
+	font-size: 0.85rem;
 	letter-spacing: 3px;
 }
 
+/* ===================== CHARACTER SELECT ===================== */
+@keyframes drift-smoke {
+	0% {
+		transform: translateX(0);
+	}
+	100% {
+		transform: translateX(-50vw);
+	}
+}
+
+/* --- OVERGANG / TRANSITIE ANIMATIE --- */
+.transition-smoke {
+	position: fixed;
+	top: 0;
+	left: 0;
+	width: 100vw;
+	height: 100vh;
+	background-color: rgba(0, 0, 0, 0.85);
+	z-index: 1000;
+	opacity: 0;
+	transform: scale(2) translateY(-10%);
+	pointer-events: none;
+	transition:
+		opacity 1s ease-in-out,
+		transform 1s cubic-bezier(0.25, 0.8, 0.25, 1);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	backdrop-filter: blur(15px);
+}
+
+.transition-smoke.active {
+	opacity: 1;
+	transform: scale(1) translateY(0);
+	pointer-events: all;
+	transition: opacity 0.3s ease;
+}
+
+.fight-text {
+	font-size: 8rem;
+	color: #d90000;
+	text-transform: uppercase;
+	font-style: italic;
+	text-shadow:
+		0 0 20px rgba(217, 0, 0, 0.8),
+		2px 2px 0 #000;
+	transform: scale(0.5);
+	opacity: 0;
+	transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.transition-smoke.active .fight-text {
+	transform: scale(1);
+	opacity: 1;
+	animation: shake-hard 0.5s ease-in-out infinite;
+}
+
+@keyframes fade-in-board {
+	0% {
+		opacity: 0;
+		transform: translateY(30px);
+	}
+	100% {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+.game-board-container {
+	animation: fade-in-board 1s cubic-bezier(0.25, 0.8, 0.25, 1) forwards;
+	opacity: 0;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	position: relative;
+	z-index: 10;
+}
+
+.select-form {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 16px;
+	width: 100%;
+	max-width: 900px;
+	position: relative;
+	z-index: 10;
+}
+
+.players-container {
+	display: flex;
+	gap: 16px;
+	width: 100%;
+	justify-content: center;
+	position: relative;
+	z-index: 10;
+}
+
+.player-select {
+	border: 1px solid #333;
+	border-radius: 10px;
+	padding: 14px;
+	width: 100%;
+	flex: 1;
+	text-align: center;
+	background: #1a1a1a;
+	box-shadow:
+		0px 0px 25px 10px rgba(0, 0, 0, 0.5),
+		inset 0px 0px 30px 2px rgba(255, 255, 255, 0.5),
+		0px 0px 10px 5px rgba(138, 138, 138, 0.66),
+		0px 0px 25px 5px rgba(138, 0, 0, 0.5);
+}
+
+.player-select h3 {
+	margin: 0 0 8px 0;
+	font-size: 1rem;
+}
+
+.name-input {
+	background: #222;
+	border: 1px solid #555;
+	border-radius: 5px;
+	padding: 6px 10px;
+	color: #eee;
+	font-size: 0.9rem;
+	text-align: center;
+	width: 180px;
+	margin-bottom: 10px;
+}
+
+.character-grid {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	justify-content: center;
+}
+
+/* --- CARDS --- */
+.char-card {
+	background: #111;
+	border: 2px solid #333;
+	border-radius: 6px;
+	overflow: hidden;
+	cursor: pointer;
+	transition: all 0.2s ease;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	padding: 0;
+	position: relative;
+	width: 90px;
+	height: 125px;
+}
+
+.char-img {
+	width: 100%;
+	height: 90px;
+	object-fit: cover;
+	object-position: top;
+	transition: filter 0.2s ease;
+}
+
+.char-name {
+	font-size: 0.7rem;
+	font-weight: bold;
+	padding: 6px 0;
+	color: #ccc;
+	background: #000;
+	width: 100%;
+	text-align: center;
+	border-top: 1px solid #333;
+	transition: all 0.2s ease;
+}
+
+.char-card:hover:not(.taken):not(:disabled) {
+	transform: scale(1.05) translateY(-2px);
+	border-color: var(--char-color);
+	box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+}
+
+.char-card.selected {
+	border-color: var(--char-color);
+	box-shadow: 0 0 10px var(--char-color);
+	transform: scale(1.02);
+}
+
+.char-card.selected .char-name {
+	color: var(--char-color);
+	background: #1a1a1a;
+}
+
+/* --- Grijswaarde lock (wanneer gekozen EN GELOCKED door de andere speler) --- */
+.char-card.taken {
+	cursor: not-allowed;
+	border-color: #111;
+	opacity: 0.5;
+}
+
+.char-card.taken .char-img {
+	filter: grayscale(100%) brightness(0.3);
+}
+
+.char-card.taken .char-name {
+	color: #444;
+	background: #0a0a0a;
+}
+
+/* --- Lock state van huidige speler --- */
+.grid-locked {
+	opacity: 0.8;
+}
+
+/* ===================== KNOPPEN ===================== */
+.lock-button {
+	width: 100%;
+	padding: 8px;
+	background-color: #444;
+	color: white;
+	border: 2px solid #555;
+	border-radius: 6px;
+	font-weight: bold;
+	cursor: pointer;
+	transition: all 0.2s ease;
+	margin-top: 15px;
+}
+
+.lock-button:hover:not(:disabled) {
+	background-color: #555;
+}
+
+.lock-button:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+}
+
+.lock-button.locked {
+	background-color: #006600; /* Groene glow als 'ie gelocked is */
+	border-color: #00ff00;
+	color: #fff;
+}
+
+.fight-waiting {
+	color: #888;
+	font-style: italic;
+	font-size: 0.9rem;
+	padding: 10px;
+	margin-top: 8px;
+}
+.start-button {
+	background-color: #d90000;
+	color: white;
+	border: none;
+	border-radius: 4px;
+	padding: 10px 20px;
+	font-size: 1.1rem;
+	font-weight: bold;
+	cursor: pointer;
+	margin-top: 8px;
+}
+
+.start-button:hover {
+	background-color: #b00000;
+}
+
+.button-menu {
+	display: flex;
+	justify-content: center;
+	gap: 8px;
+}
+
+.button-menu button {
+	padding: 7px 12px;
+	background-color: #333;
+	color: white;
+	border: none;
+	border-radius: 5px;
+	cursor: pointer;
+	font-weight: bold;
+	font-size: 0.85rem;
+}
+
+.button-menu button:hover {
+	background-color: #444;
+}
+
+.button-menu button.danger {
+	background-color: #d90000;
+}
+
+.button-menu button.danger:hover {
+	background-color: #b00000;
+}
+
+/* ===================== SCOREBOARD ===================== */
+.scoreboard {
+	display: flex;
+	justify-content: center;
+	gap: 24px;
+	background-color: #1a1a1a;
+	border: 1px solid #333;
+	padding: 8px 20px;
+	border-radius: 8px;
+	text-align: center;
+	font-size: 0.85rem;
+	margin: 1rem auto;
+}
+
+/* ===================== STATUS & TIMER ===================== */
+.status {
+	font-weight: bold;
+	text-align: center;
+	margin: 0;
+}
+
+.timer {
+	font-size: 1.1rem;
+	font-weight: bold;
+	margin: 0;
+}
+
+/* ===================== SPEELBORD ===================== */
 .board {
 	display: grid;
-	grid-template-columns: repeat(3, 120px);
-	grid-template-rows: repeat(3, 120px);
-	gap: 4px;
+	grid-template-columns: repeat(3, 100px);
+	grid-template-rows: repeat(3, 100px);
+	gap: 0.25rem;
 	background-color: #333;
-	padding: 4px;
+	padding: 0.25rem;
 	border-radius: 8px;
-	margin: 15px 0;
+	width: max-content;
+	margin: 1rem auto;
 }
 
 .square {
@@ -44,7 +379,7 @@
 	display: flex;
 	justify-content: center;
 	align-items: center;
-	font-size: 3.5rem;
+	font-size: 3rem;
 	font-weight: bold;
 	cursor: pointer;
 	transition: background-color 0.15s ease;
@@ -55,203 +390,129 @@
 	background-color: #2a2a2a;
 }
 
-.select-form {
-	display: flex;
-	flex-direction: column;
-	align-items: center;
-	gap: 30px;
-	width: 100%;
-	max-width: 700px;
+.board.disabled {
+	opacity: 0.3;
+	filter: grayscale(1);
+	pointer-events: none;
 }
 
-.player-select {
-	border: 1px solid #333;
-	border-radius: 10px;
-	padding: 20px;
-	width: 100%;
-	text-align: center;
-	background: #1a1a1a;
-}
-
-.name-input {
-	background: #222;
-	border: 1px solid #555;
-	border-radius: 5px;
-	padding: 8px 12px;
-	color: #eee;
-	font-size: 1rem;
-	text-align: center;
-	width: 200px;
-	margin-bottom: 15px;
-}
-
-.character-grid {
-	display: flex;
-	flex-wrap: wrap;
-	gap: 10px;
-	justify-content: center;
-	margin-top: 10px;
-}
-
-.char-btn {
-	padding: 8px 14px;
-	border-radius: 6px;
-	border: 2px solid;
-	background: transparent;
-	cursor: pointer;
-	font-weight: bold;
-	font-size: 0.9rem;
-	transition: all 0.2s ease;
-}
-
-.char-btn:hover {
-	opacity: 0.8;
-	transform: scale(1.05);
-}
-
-.char-btn.selected {
-	font-weight: bold;
-}
-
-.start-form {
-	display: flex;
-	flex-direction: column;
-	gap: 15px;
-	background: #1a1a1a;
-	padding: 2rem;
-	border-radius: 8px;
-	box-shadow: 0 4px 6px rgba(0, 0, 0, 0.5);
-}
-
-.input-group {
-	display: flex;
-	flex-direction: column;
-	gap: 5px;
-	text-align: left;
-}
-
-.input-group label {
-	font-weight: bold;
-	color: #ccc;
-}
-
-.input-group input {
-	padding: 8px;
-	font-size: 1rem;
-	border: 1px solid #555;
-	border-radius: 4px;
-	background: #222;
-	color: #eee;
-}
-
-.start-button {
-	background-color: #d90000;
-	color: white;
-	border: none;
-	border-radius: 4px;
-	padding: 10px;
-	font-size: 1.2rem;
-	font-weight: bold;
-	cursor: pointer;
-	margin-top: 10px;
-}
-
-.start-button:hover {
-	background-color: #b00000;
-}
-
+/* ===================== SHAKE ANIMATIES ===================== */
 @keyframes shake {
 	0% {
-		transform: translate(1px, 1px) rotate(0deg);
+		transform: translate(0px, 0px) rotate(0deg);
+		background-color: transparent;
 	}
-	10% {
-		transform: translate(-1px, -2px) rotate(-1deg);
+	8% {
+		transform: translate(-4px, 2px) rotate(-1.5deg);
+		background-color: rgba(180, 20, 20, 0.15);
 	}
-	20% {
-		transform: translate(-3px, 0px) rotate(1deg);
+	18% {
+		transform: translate(5px, -1px) rotate(1deg);
+		background-color: transparent;
 	}
-	30% {
-		transform: translate(3px, 2px) rotate(0deg);
+	28% {
+		transform: translate(-3px, 3px) rotate(-0.5deg);
+		background-color: rgba(180, 20, 20, 0.2);
 	}
 	40% {
-		transform: translate(1px, -1px) rotate(1deg);
+		transform: translate(4px, 1px) rotate(1.2deg);
+		background-color: transparent;
 	}
-	50% {
-		transform: translate(-1px, 2px) rotate(-1deg);
+	52% {
+		transform: translate(-2px, -3px) rotate(-1deg);
+		background-color: rgba(180, 20, 20, 0.15);
 	}
-	60% {
-		transform: translate(-3px, 1px) rotate(0deg);
+	64% {
+		transform: translate(3px, 2px) rotate(0.8deg);
+		background-color: transparent;
 	}
-	70% {
-		transform: translate(3px, 1px) rotate(-1deg);
-	}
-	80% {
-		transform: translate(-1px, -1px) rotate(1deg);
+	78% {
+		transform: translate(-4px, -1px) rotate(-0.5deg);
+		background-color: rgba(180, 20, 20, 0.1);
 	}
 	90% {
-		transform: translate(1px, 2px) rotate(0deg);
+		transform: translate(2px, 1px) rotate(0.3deg);
+		background-color: transparent;
 	}
 	100% {
 		transform: translate(0px, 0px) rotate(0deg);
+		background-color: transparent;
 	}
 }
 
 .shake-normal {
-	animation: shake 0.3s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+	animation: shake 0.35s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
 }
 
 @keyframes shake-heavy {
 	0% {
-		transform: translate(3px, 3px) rotate(0deg) scale(1);
+		transform: translate(0, 0) rotate(0deg) scale(1);
+		background-color: transparent;
 		filter: contrast(1);
 	}
-	10% {
-		transform: translate(-3px, -4px) rotate(-2deg) scale(1.05);
+	6% {
+		transform: translate(-7px, 4px) rotate(-3deg) scale(1.02);
+		background-color: rgba(139, 0, 0, 0.4);
+		filter: contrast(1.3);
 	}
-	20% {
-		transform: translate(-6px, 0px) rotate(3deg);
-		filter: contrast(1.5);
+	13% {
+		transform: translate(8px, -5px) rotate(2.5deg);
+		background-color: transparent;
+		filter: contrast(1);
+	}
+	21% {
+		transform: translate(-5px, 6px) rotate(-2deg) scale(1.04);
+		background-color: rgba(139, 0, 0, 0.5);
 	}
 	30% {
-		transform: translate(6px, 4px) rotate(0deg) scale(1.1);
+		transform: translate(9px, -2px) rotate(3deg);
+		background-color: rgba(80, 0, 0, 0.3);
+		filter: contrast(1.4);
 	}
-	40% {
-		transform: translate(2px, -3px) rotate(2deg);
-		filter: invert(0.1);
+	39% {
+		transform: translate(-8px, 5px) rotate(-1.5deg) scale(1.06);
+		background-color: transparent;
+		filter: contrast(1);
 	}
-	50% {
-		transform: translate(-3px, 4px) rotate(-3deg) scale(1.05);
+	49% {
+		transform: translate(6px, -6px) rotate(2deg);
+		background-color: rgba(139, 0, 0, 0.6);
 	}
-	60% {
-		transform: translate(-6px, 2px) rotate(0deg);
+	58% {
+		transform: translate(-9px, 3px) rotate(-3deg) scale(1.03);
+		background-color: rgba(60, 0, 0, 0.4);
+		filter: contrast(1.5);
 	}
-	70% {
-		transform: translate(6px, 2px) rotate(-2deg);
+	67% {
+		transform: translate(7px, 4px) rotate(1.5deg);
+		background-color: transparent;
+		filter: contrast(1);
 	}
-	80% {
-		transform: translate(-2px, -2px) rotate(3deg);
-		filter: contrast(1.2);
+	77% {
+		transform: translate(-4px, -5px) rotate(-2.5deg) scale(1.02);
+		background-color: rgba(139, 0, 0, 0.3);
 	}
-	90% {
-		transform: translate(2px, 4px) rotate(0deg);
+	88% {
+		transform: translate(5px, 2px) rotate(1deg);
+		background-color: transparent;
 	}
 	100% {
-		transform: translate(0px, 0px) rotate(0deg) scale(1);
+		transform: translate(0, 0) rotate(0deg) scale(1);
+		background-color: transparent;
 		filter: contrast(1);
 	}
 }
 
 .shake-hard {
-	animation: shake-heavy 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
-	background-color: darkred; /* Kleine dramatische tint op de achtergrond */
+	animation: shake-heavy 0.55s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
 }
 
-/* Fatality UI */
-/* .fatality-bg {
-	background-color: #1a0000;
+/* ===================== FATALITY ===================== */
+.fatality-bg {
+	background-color: #0d0000;
 	color: #ff0000;
 	transition: background-color 0.5s ease;
-} */
+}
 
 .overlay-blood {
 	position: fixed;
@@ -259,33 +520,113 @@
 	left: 0;
 	width: 100%;
 	height: 100%;
-	background: radial-gradient(circle, transparent 40%, rgba(139, 0, 0, 0.4) 100%);
+	background: radial-gradient(
+		circle at center,
+		rgba(80, 0, 0, 0.3) 0%,
+		rgba(139, 0, 0, 0.7) 100%
+	);
 	pointer-events: none;
 	z-index: 10;
-	animation: pulse 2s infinite;
+	animation: blood-pulse 1.5s infinite;
 }
 
-@keyframes pulse {
+@keyframes blood-pulse {
 	0% {
+		opacity: 0.6;
+	}
+	20% {
+		opacity: 0.9;
+	}
+	40% {
 		opacity: 0.5;
 	}
-	50% {
-		opacity: 0.8;
+	60% {
+		opacity: 1;
+	}
+	80% {
+		opacity: 0.7;
 	}
 	100% {
-		opacity: 0.5;
+		opacity: 0.6;
 	}
 }
 
 .fatality-sequence {
 	display: flex;
-	gap: 10px;
-	margin: 20px 0;
-	font-size: 2rem;
-	background: rgba(0, 0, 0, 0.8);
-	padding: 15px;
+	margin: 0.5rem auto;
+	gap: 8px;
+	font-size: 1.8rem;
+	background: rgba(0, 0, 0, 0.9);
+	padding: 12px;
 	border-radius: 10px;
 	border: 2px solid #ff0000;
+	animation: flicker-fade 10s linear forwards;
+}
+
+@keyframes flicker-fade {
+	0% {
+		opacity: 1;
+	}
+	5% {
+		opacity: 0.8;
+	}
+	10% {
+		opacity: 1;
+	}
+	15% {
+		opacity: 0.6;
+	}
+	20% {
+		opacity: 0.9;
+	}
+	25% {
+		opacity: 0.7;
+	}
+	30% {
+		opacity: 0.75;
+	}
+	35% {
+		opacity: 0.5;
+	}
+	40% {
+		opacity: 0.7;
+	}
+	45% {
+		opacity: 0.3;
+	}
+	50% {
+		opacity: 0.6;
+	}
+	55% {
+		opacity: 0.2;
+	}
+	60% {
+		opacity: 0.55;
+	}
+	65% {
+		opacity: 0.15;
+	}
+	70% {
+		opacity: 0.4;
+	}
+	75% {
+		opacity: 0.1;
+	}
+	80% {
+		opacity: 0.3;
+	}
+	85% {
+		opacity: 0.05;
+	}
+	90% {
+		opacity: 0.2;
+	}
+	95% {
+		opacity: 0.02;
+	}
+	100% {
+		opacity: 0;
+	}
 }
 
 .combo-key {
@@ -302,52 +643,4 @@
 .combo-key.done {
 	color: #00ff00;
 	opacity: 0.5;
-}
-
-.board.disabled {
-	opacity: 0.3;
-	filter: grayscale(1);
-	pointer-events: none;
-}
-
-.scoreboard {
-	display: flex;
-	gap: 30px;
-	background-color: #1a1a1a;
-	border: 1px solid #333;
-	padding: 12px 24px;
-	border-radius: 8px;
-	margin-bottom: 15px;
-	text-align: center;
-}
-
-.status {
-	font-weight: bold;
-	text-align: center;
-}
-
-.timer {
-	font-size: 1.2rem;
-	margin-bottom: 10px;
-	font-weight: bold;
-}
-
-.button-menu {
-	display: flex;
-	gap: 10px;
-	margin-top: 20px;
-}
-
-.button-menu button {
-	padding: 10px;
-	background-color: #333;
-	color: white;
-	border: none;
-	border-radius: 5px;
-	cursor: pointer;
-	font-weight: bold;
-}
-
-.button-menu button.danger {
-	background-color: #d90000;
 }
