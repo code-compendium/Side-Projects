@@ -15,6 +15,46 @@ let backgroundMusic = null;
 let battleMusic = null;
 
 let hoverAudio = null;
+let audioUnlocked = false;
+let listenersAttached = false;
+const pendingActions = new Set();
+let selectScreenIntroQueued = false;
+
+function queueAfterUnlock(action) {
+	pendingActions.add(action);
+
+	if (listenersAttached) return;
+	listenersAttached = true;
+
+	const unlockAudio = () => {
+		audioUnlocked = true;
+		listenersAttached = false;
+		window.removeEventListener("pointerdown", unlockAudio);
+		window.removeEventListener("keydown", unlockAudio);
+
+		const queuedActions = Array.from(pendingActions);
+		pendingActions.clear();
+		queuedActions.forEach((queuedAction) => queuedAction());
+	};
+
+	window.addEventListener("pointerdown", unlockAudio, { once: true });
+	window.addEventListener("keydown", unlockAudio, { once: true });
+}
+
+function removeQueuedAction(action) {
+	pendingActions.delete(action);
+}
+
+function safePlay(audio, onBlocked) {
+	try {
+		const playPromise = audio.play();
+		playPromise?.catch(() => {
+			if (onBlocked) queueAfterUnlock(onBlocked);
+		});
+	} catch {
+		if (onBlocked) queueAfterUnlock(onBlocked);
+	}
+}
 
 /**
  * Helper om een geluidseffect af te spelen.
@@ -30,7 +70,7 @@ function playEffect(url, volume = 0.5, restartIfPlaying = false) {
 
 	if (restartIfPlaying) hoverAudio = audio;
 
-	audio.play().catch((e) => console.log("Audio play blocked/failed:", e));
+	safePlay(audio);
 }
 
 // ============================================================
@@ -38,41 +78,103 @@ function playEffect(url, volume = 0.5, restartIfPlaying = false) {
 // ============================================================
 
 export function startSelectMusic() {
-	if (backgroundMusic) stopSelectMusic();
-	backgroundMusic = new Audio(selectMusicUrl);
-	backgroundMusic.loop = true;
+	if (!backgroundMusic) {
+		backgroundMusic = new Audio(selectMusicUrl);
+		backgroundMusic.loop = true;
+	}
+
 	backgroundMusic.volume = 0.25;
-	backgroundMusic.play().catch(() => {
-		const retry = () => {
-			backgroundMusic?.play();
-			window.removeEventListener("click", retry);
-		};
-		window.addEventListener("click", retry);
-	});
+	removeQueuedAction(resumeBattleMusic);
+	resumeSelectMusic();
+
+	if (!audioUnlocked) {
+		queueAfterUnlock(resumeSelectMusic);
+	}
 }
 
 export function stopSelectMusic() {
 	if (backgroundMusic) {
+		removeQueuedAction(resumeSelectMusic);
 		backgroundMusic.pause();
 		backgroundMusic.currentTime = 0;
-		backgroundMusic = null;
 	}
 }
 
 export function startBattleMusic(url) {
-	if (battleMusic) stopBattleMusic();
-	// Battle muziek
-	battleMusic = new Audio(url || kombatBgUrl);
-	battleMusic.loop = true;
-	battleMusic.volume = 0.15; // Zacht op de achtergrond
-	battleMusic.play().catch(() => {});
+	if (!battleMusic || (url && battleMusic.src !== new URL(url, window.location.href).href)) {
+		battleMusic = new Audio(url || kombatBgUrl);
+		battleMusic.loop = true;
+	}
+
+	battleMusic.volume = 0.15;
+	removeQueuedAction(resumeSelectMusic);
+	resumeBattleMusic();
+
+	if (!audioUnlocked) {
+		queueAfterUnlock(resumeBattleMusic);
+	}
 }
 
 export function stopBattleMusic() {
 	if (battleMusic) {
+		removeQueuedAction(resumeBattleMusic);
 		battleMusic.pause();
-		battleMusic = null;
+		battleMusic.currentTime = 0;
 	}
+}
+
+function resumeSelectMusic() {
+	if (!backgroundMusic) return;
+	safePlay(backgroundMusic, resumeSelectMusic);
+}
+
+function resumeBattleMusic() {
+	if (!battleMusic) return;
+	safePlay(battleMusic, resumeBattleMusic);
+}
+
+function playChooseYourFighterNow() {
+	const audio = new Audio(chooseYourFighterUrl);
+	audio.volume = 0.8;
+	safePlay(audio);
+}
+
+export function armSelectMusic() {
+	if (!backgroundMusic) {
+		backgroundMusic = new Audio(selectMusicUrl);
+		backgroundMusic.loop = true;
+		backgroundMusic.volume = 0.25;
+	}
+
+	if (audioUnlocked) {
+		resumeSelectMusic();
+		return;
+	}
+
+	queueAfterUnlock(resumeSelectMusic);
+}
+
+export function enterSelectScreenAudio() {
+	if (!backgroundMusic) {
+		backgroundMusic = new Audio(selectMusicUrl);
+		backgroundMusic.loop = true;
+		backgroundMusic.volume = 0.25;
+	}
+
+	if (audioUnlocked) {
+		resumeSelectMusic();
+		playChooseYourFighterNow();
+		return;
+	}
+
+	if (selectScreenIntroQueued) return;
+	selectScreenIntroQueued = true;
+
+	queueAfterUnlock(() => {
+		selectScreenIntroQueued = false;
+		resumeSelectMusic();
+		playChooseYourFighterNow();
+	});
 }
 
 // ============================================================
@@ -81,16 +183,7 @@ export function stopBattleMusic() {
 
 // Choose your fighter stem
 export function playChooseYourFighter() {
-	const audio = new Audio(chooseYourFighterUrl);
-	audio.volume = 0.8;
-	audio.play().catch(() => {
-		// Browser blokkeert autoplay, wacht op de eerste interactie!
-		const retry = () => {
-			audio.play();
-			window.removeEventListener("click", retry);
-		};
-		window.addEventListener("click", retry);
-	});
+	enterSelectScreenAudio();
 }
 
 // Hover over character kaart
@@ -100,7 +193,7 @@ export function playCardHover() {
 
 // Aanklikken van een character
 export function playCardSelect() {
-	playEffect(cardSelectUrl, 0.5);
+	playEffect(cardSelectUrl, 1);
 }
 
 // Klikken op "Fight"

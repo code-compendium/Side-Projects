@@ -1,527 +1,469 @@
-import React, { useState, useEffect } from "react";
-import SmokeBackground from "./components/SmokeBackground";
-
+import { useEffect, useMemo, useState } from "react";
 import "./App.css";
-import {
-	startSelectMusic,
-	stopSelectMusic,
-	startBattleMusic,
-	stopBattleMusic,
-	playChooseYourFighter,
-	playCardHover,
-	playCardSelect,
-	playFightClick,
-	playStrike,
-	playHeavyStrike,
-	playFatalityStart,
-	playWinner,
-	playFatalityFail,
-} from "./sounds.js";
+import SmokeBackground from "./components/SmokeBackground";
+import CharacterSelectPanel from "./components/CharacterSelectPanel";
+import ChatPanel from "./components/ChatPanel";
+import FatalitySequence from "./components/FatalitySequence";
+import GameBoard from "./components/GameBoard";
+import InvitePanel from "./components/InvitePanel";
+import Scoreboard from "./components/Scoreboard";
+import StatusBanner from "./components/StatusBanner";
+import { useLocalGame } from "./hooks/useLocalGame";
+import { useOnlineGame } from "./hooks/useOnlineGame";
 
-// Winst-lijnen die we vaker gaan gebruiken
-const WIN_LINES = [
-	[0, 1, 2],
-	[3, 4, 5],
-	[6, 7, 8],
-	[0, 3, 6],
-	[1, 4, 7],
-	[2, 5, 8],
-	[0, 4, 8],
-	[2, 4, 6],
-];
-
-import imgScorpion from "./assets/images/Scorpion_Insp.png";
-import imgSubZero from "./assets/images/Sub-Zero_Insp.png";
-import imgKitana from "./assets/images/Kitana_Insp.png";
-import imgSonya from "./assets/images/Sonya_Insp.png";
-import imgShaoKahn from "./assets/images/Shao-Kahn_Insp.png";
-import imgRaiden from "./assets/images/Raiden_Insp.png";
-
-// Beschikbare Mortal Kombat-stijl personages
-const CHARACTERS = [
-	{ name: "Scorpion", color: "#ffcc00", shadow: "#ff6600", img: imgScorpion },
-	{ name: "Sub-Zero", color: "#00ccff", shadow: "#0033ff", img: imgSubZero },
-	{ name: "Kitana", color: "#3366ff", shadow: "#000099", img: imgKitana },
-	{ name: "Sonya", color: "#33cc33", shadow: "#006600", img: imgSonya },
-	{ name: "Shao Kahn", color: "#ff3300", shadow: "#660000", img: imgShaoKahn },
-	{ name: "Raiden", color: "#ffffff", shadow: "#00ffff", img: imgRaiden },
-];
-
-const TIMER = 10;
-const FATALITY_KEYS = ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"];
-const KEY_LABELS = {
-	ArrowUp: "↑",
-	ArrowDown: "↓",
-	ArrowLeft: "←",
-	ArrowRight: "→",
-};
-
-/**
- * Controleert de winst en dreiging (2 op een rij)
- */
-function calculateWinner(squares) {
-	for (let line of WIN_LINES) {
-		const [a, b, c] = line;
-		if (squares[a] && squares[a] === squares[b] && squares[a] === squares[c]) {
-			return squares[a];
-		}
-	}
-	return null;
-}
-
-function checkThreat(squares) {
-	for (let line of WIN_LINES) {
-		const [a, b, c] = line;
-		const vals = [squares[a], squares[b], squares[c]];
-		const xCount = vals.filter((v) => v === "X").length;
-		const oCount = vals.filter((v) => v === "O").length;
-		const nullCount = vals.filter((v) => v === null).length;
-		if ((xCount === 2 || oCount === 2) && nullCount === 1) {
-			return true;
-		}
-	}
-	return false;
-}
-
-function App() {
-	const [screen, setScreen] = useState("select");
-	const [board, setBoard] = useState(Array(9).fill(null));
-	const [xIsNext, setXIsNext] = useState(true);
-	const [shake, setShake] = useState("");
-	const [timeLeft, setTimeLeft] = useState(TIMER);
-	const [scores, setScores] = useState(() => {
-		const saved = localStorage.getItem("mk_tictactoe_scores");
-		return saved ? JSON.parse(saved) : { X: 0, O: 0, draws: 0 };
-	});
-
-	const [players, setPlayers] = useState({
-		X: { name: "", character: CHARACTERS[0], locked: false },
-		O: { name: "", character: CHARACTERS[1], locked: false },
-	});
-
-	const [fatality, setFatality] = useState({
-		active: false,
-		sequence: [],
-		progress: 0,
-		winner: null,
-		result: null,
-	});
-
-	const [isTransitioning, setIsTransitioning] = useState(false);
-
-	const xIsNextRef = React.useRef(xIsNext);
-	useEffect(() => {
-		xIsNextRef.current = xIsNext;
-	}, [xIsNext]);
-
-	// Start de muziek zodra de app laadt of op select scherm komt
-	useEffect(() => {
-		if (screen === "select") {
-			playChooseYourFighter();
-			startSelectMusic();
-			stopBattleMusic();
-		} else if (screen === "game") {
-			stopSelectMusic();
-			startBattleMusic();
-		}
-		return () => {
-			stopSelectMusic();
-			stopBattleMusic();
-		};
-	}, [screen]);
-
-	useEffect(() => {
-		localStorage.setItem("mk_tictactoe_scores", JSON.stringify(scores));
-	}, [scores]);
-
-	// === Timer Logica ===
-	useEffect(() => {
-		if (fatality.active || calculateWinner(board) || !board.includes(null)) return;
-
-		const interval = setInterval(() => {
-			if (timeLeft <= 1) {
-				// Tijd is om: wissel beurt en reset timer
-				setXIsNext((prev) => !prev);
-				setTimeLeft(TIMER);
-			} else {
-				// Tel af
-				setTimeLeft((prev) => prev - 1);
-			}
-		}, 1000);
-
-		return () => clearInterval(interval);
-	}, [board, fatality.active, timeLeft]);
-
-	const resetGameAfterFail = React.useCallback(() => {
-		setBoard(Array(9).fill(null));
-		setFatality({ active: false, sequence: [], progress: 0, winner: null, result: null });
-		setTimeLeft(TIMER);
-		// We draaien de beurt NIET om, want handleSquareClick heeft dat al gedaan.
-		// Zo krijgt de andere speler de beurt als de winnaar zijn fatality verpest.
-	}, []);
-
-	// === Fatality Timeout (10s) ===
-	useEffect(() => {
-		if (!fatality.active || fatality.result) return;
-
-		const timer = setTimeout(() => {
-			setFatality((prev) => ({ ...prev, result: "fail" }));
-			playFatalityFail();
-			setShake("shake-normal");
-			setTimeout(() => {
-				setShake("");
-				resetGameAfterFail();
-			}, 2000);
-		}, 10000);
-
-		return () => clearTimeout(timer);
-	}, [fatality.active, fatality.result, resetGameAfterFail]);
-
-	// === Fatality Key Listener ===
-	useEffect(() => {
-		if (!fatality.active || fatality.result) return;
-
-		const handleKeyDown = (e) => {
-			if (!FATALITY_KEYS.includes(e.key)) return;
-			e.preventDefault();
-			const targetKey = fatality.sequence[fatality.progress];
-			if (e.key === targetKey) {
-				const nextProgress = fatality.progress + 1;
-				if (nextProgress === fatality.sequence.length) {
-					setFatality((prev) => ({ ...prev, result: "success" }));
-					playWinner();
-					setScores((prev) => ({
-						...prev,
-						[fatality.winner]: prev[fatality.winner] + 1,
-					}));
-					setShake("shake-hard");
-					setTimeout(() => setShake(""), 1000);
-				} else {
-					setFatality((prev) => ({ ...prev, progress: nextProgress }));
-				}
-			} else {
-				setFatality((prev) => ({ ...prev, result: "fail" }));
-				playFatalityFail();
-				setShake("shake-normal");
-				setTimeout(() => {
-					setShake("");
-					resetGameAfterFail();
-				}, 2000);
-			}
-		};
-
-		window.addEventListener("keydown", handleKeyDown);
-		return () => window.removeEventListener("keydown", handleKeyDown);
-	}, [fatality, resetGameAfterFail]);
-
-	// === Game Logica ===
-	const handleSquareClick = (index) => {
-		if (board[index] || calculateWinner(board) || fatality.active) return;
-
-		const newBoard = board.slice();
-		newBoard[index] = xIsNext ? "X" : "O";
-
-		const currentWinner = calculateWinner(newBoard);
-		const hasThreat = checkThreat(newBoard);
-
-		// Visuele impact bepalen
-		if (currentWinner || hasThreat) {
-			playHeavyStrike();
-			setShake("shake-hard");
-			setTimeout(() => setShake(""), 500);
-		} else {
-			playStrike();
-			setShake("shake-normal");
-			setTimeout(() => setShake(""), 350);
-		}
-
-		if (currentWinner) {
-			const randomSequence = Array.from(
-				{ length: 10 },
-				() => FATALITY_KEYS[Math.floor(Math.random() * FATALITY_KEYS.length)],
-			);
-			playFatalityStart();
-			setFatality({
-				active: true,
-				sequence: randomSequence,
-				progress: 0,
-				winner: currentWinner,
-				result: null,
-			});
-		} else if (!newBoard.includes(null)) {
-			setScores((prev) => ({ ...prev, draws: prev.draws + 1 }));
-		}
-
-		setBoard(newBoard);
-		setXIsNext(!xIsNext);
-		setTimeLeft(TIMER);
-	};
-
-	const startGame = (event) => {
-		event.preventDefault();
-		if (!players.X.locked || !players.O.locked) return;
-
-		playFightClick();
-		setIsTransitioning(true);
-
-		setTimeout(() => {
-			setBoard(Array(9).fill(null));
-			setScreen("game");
-			setTimeLeft(TIMER);
-			setXIsNext(true);
-			setFatality({
-				active: false,
-				sequence: [],
-				progress: 0,
-				winner: null,
-				result: null,
-			});
-			setTimeout(() => {
-				setIsTransitioning(false);
-			}, 50);
-		}, 2000); // 2 seconden transition
-	};
-
-	const resetBoard = () => {
-		setBoard(Array(9).fill(null));
-		setXIsNext(true);
-		setTimeLeft(TIMER);
-		setFatality({ active: false, sequence: [], progress: 0, winner: null, result: null });
-	};
-
-	const resetScores = () => {
-		if (window.confirm("Weet je zeker dat je alle scores wilt wissen?")) {
-			setScores({ X: 0, O: 0, draws: 0 });
-		}
-	};
-
-	const toggleLock = (symbol) => {
-		const otherSymbol = symbol === "X" ? "O" : "X";
-		setPlayers((prev) => {
-			const isCurrentlyLocked = prev[symbol].locked;
-			if (isCurrentlyLocked) {
-				return { ...prev, [symbol]: { ...prev[symbol], locked: false } };
-			} else {
-				let newState = { ...prev, [symbol]: { ...prev[symbol], locked: true } };
-				// Als de andere speler zijn character nog NIET gelocked heeft, én op hetzelfde personage zat als wat we net locken:
-				// push die andere speler dan direct naar een ander beschikbaar personage.
-				if (
-					!newState[otherSymbol].locked &&
-					newState[otherSymbol].character.name === newState[symbol].character.name
-				) {
-					const availableChar = CHARACTERS.find(
-						(c) => c.name !== newState[symbol].character.name,
-					);
-					newState[otherSymbol] = { ...newState[otherSymbol], character: availableChar };
-				}
-				return newState;
-			}
-		});
-	};
-
-	// === Renders ===
-	const winner = calculateWinner(board);
-	const currentPlayer = xIsNext ? players.X : players.O;
-	const winnerPlayer = winner ? players[winner] : null;
-
-	let status;
-	if (fatality.active) {
-		if (fatality.result === "success")
-			status = `FATALITY! ${players[fatality.winner].name.toUpperCase()} WINS!`;
-		else if (fatality.result === "fail") status = `FAIL!`;
-		else status = `☠ FINISH HIM! (${players[fatality.winner].name}) ☠`;
-	} else if (winner) {
-		status = `Winner: ${winnerPlayer.name}!`;
-	} else if (!board.includes(null)) {
-		status = "Draw!";
-	} else {
-		status = `Turn: ${currentPlayer.name} (${xIsNext ? "X" : "O"})`;
-	}
+function LocalView({ game }) {
+	const {
+		transitionActive,
+		players,
+		canStart,
+		startGame,
+		ensureSelectMusic,
+		setPlayerName,
+		selectCharacter,
+		toggleLock,
+		screen,
+		scoreboardPlayers,
+		scores,
+		statusText,
+		statusColor,
+		canContinueRound,
+		showTimer,
+		timeLeft,
+		board,
+		boardFocusSignal,
+		boardLocked,
+		playMove,
+		continueRound,
+		fatality,
+		resetBoard,
+		resetScores,
+		goToSelect,
+	} = game;
 
 	return (
-		<main className={`game-container ${shake} ${fatality.active ? "fatality-bg" : ""}`}>
-			<SmokeBackground />
-			<div className={`transition-smoke ${isTransitioning ? "active" : ""}`}>
+		<>
+			<div className={`transition-smoke ${transitionActive ? "active" : ""}`}>
 				<h2 className="fight-text">FIGHT!</h2>
 			</div>
 
 			{screen === "select" ? (
-				<form className="select-form" onSubmit={startGame}>
-					<h1 className="mk-title">Tic-Tac-Kombat</h1>
-					<p className="mk-subtitle">Choose Your Fighter</p>
-
-					<div className="players-container">
-						{["X", "O"].map((symbol) => (
-							<div key={symbol} className="player-select">
-								<h3>
-									Player {symbol === "X" ? "1" : "2"} ({symbol})
-								</h3>
-								<input
-									className="name-input"
-									type="text"
-									value={players[symbol].name}
-									disabled={players[symbol].locked}
-									onChange={(e) =>
-										setPlayers((prev) => ({
-											...prev,
-											[symbol]: { ...prev[symbol], name: e.target.value },
-										}))
-									}
-									placeholder={`Naam speler ${symbol === "X" ? "1" : "2"}`}
-									required
-								/>
-								<div
-									className={`character-grid ${players[symbol].locked ? "grid-locked" : ""}`}
-								>
-									{CHARACTERS.map((char) => {
-										const isSelected = players[symbol].character.name === char.name;
-										const otherSymbol = symbol === "X" ? "O" : "X";
-										const isTakenByOther =
-											players[otherSymbol].locked &&
-											players[otherSymbol].character.name === char.name;
-
-										return (
-											<button
-												key={char.name}
-												type="button"
-												className={`char-card ${isSelected ? "selected" : ""} ${isTakenByOther ? "taken" : ""}`}
-												style={{ "--char-color": char.color }}
-												disabled={isTakenByOther || players[symbol].locked}
-												onMouseEnter={() => {
-													if (!isTakenByOther && !players[symbol].locked) {
-														playCardHover();
-													}
-												}}
-												onClick={() => {
-													if (!isTakenByOther && !players[symbol].locked) {
-														playCardSelect();
-														setPlayers((prev) => ({
-															...prev,
-															[symbol]: { ...prev[symbol], character: char },
-														}));
-													}
-												}}
-											>
-												<img src={char.img} alt={char.name} className="char-img" />
-												<span className="char-name">{char.name}</span>
-											</button>
-										);
-									})}
-								</div>
-
-								<button
-									type="button"
-									className={`lock-button ${players[symbol].locked ? "locked" : ""}`}
-									onClick={() => toggleLock(symbol)}
-									disabled={players[symbol].name.length === 0}
-								>
-									{players[symbol].locked ? "🔒 UNLOCK" : "🔒 LOCK"}
-								</button>
-							</div>
-						))}
+				<form
+					className="screen-shell select-shell"
+					onSubmit={(event) => {
+						event.preventDefault();
+						startGame();
+					}}
+					onPointerDownCapture={ensureSelectMusic}
+					onKeyDownCapture={ensureSelectMusic}
+				>
+					<div className="title-block">
+						<h1 className="mk-title">Tic-Tac-Kombat</h1>
+						<p className="mk-subtitle">Local versus mode</p>
 					</div>
 
-					{players.X.locked && players.O.locked ? (
-						<button type="submit" className="start-button">
-							⚔ FIGHT! ⚔
+					<div className="players-grid">
+						<CharacterSelectPanel
+							player={players.X}
+							otherPlayer={players.O}
+							symbol="X"
+							label="Player 1"
+							isEditable
+							onNameChange={setPlayerName}
+							onCharacterSelect={selectCharacter}
+							onToggleLock={toggleLock}
+						/>
+						<CharacterSelectPanel
+							player={players.O}
+							otherPlayer={players.X}
+							symbol="O"
+							label="Player 2"
+							isEditable
+							onNameChange={setPlayerName}
+							onCharacterSelect={selectCharacter}
+							onToggleLock={toggleLock}
+						/>
+					</div>
+
+					{canStart ? (
+						<button type="submit" className="primary-button start-button">
+							FIGHT!
 						</button>
 					) : (
-						<div className="fight-waiting">Both players must lock in to start...</div>
+						<div className="info-banner">Both players must lock in before the match can start.</div>
 					)}
 				</form>
 			) : (
-				<div className="game-board-container">
-					{fatality.active && !fatality.result && <div className="overlay-blood" />}
-
-					<h1 className="mk-title">Tic-Tac-Kombat</h1>
-
-					<div className="scoreboard">
-						<div style={{ color: players.X.character.color }}>
-							<strong>{players.X.name}</strong>
-							<br />
-							{players.X.character.name}
-							<br />
-							{scores.X} wins
-						</div>
-						<div>
-							<strong>Draws:</strong>
-							<br />
-							{scores.draws}
-						</div>
-						<div style={{ color: players.O.character.color }}>
-							<strong>{players.O.name}</strong>
-							<br />
-							{players.O.character.name}
-							<br />
-							{scores.O} wins
-						</div>
+				<section className="screen-shell game-shell">
+					<div className="title-block compact">
+						<h1 className="mk-title">Tic-Tac-Kombat</h1>
+						<p className="mk-subtitle">Local showdown</p>
 					</div>
 
-					<div
-						className="status"
-						style={{
-							fontSize: fatality.active ? "1.8rem" : "1.3rem",
-							color: winner
-								? winnerPlayer.character.color
-								: fatality.active
-									? "#ff0000ff"
-									: currentPlayer.character.color,
-						}}
-					>
-						{status}
-					</div>
+					<Scoreboard players={scoreboardPlayers} scores={scores} />
+					<StatusBanner
+						statusText={statusText}
+						statusColor={statusColor}
+						showTimer={showTimer}
+						timeLeft={timeLeft}
+					/>
+					<FatalitySequence fatality={fatality} />
+					<GameBoard
+						board={board}
+						players={scoreboardPlayers}
+						onSelect={playMove}
+						isDisabled={boardLocked}
+						canContinueRound={canContinueRound}
+						onContinueRound={continueRound}
+						focusSignal={boardFocusSignal}
+					/>
 
-					{fatality.active && !fatality.result && (
-						<div className="fatality-sequence">
-							{fatality.sequence.map((key, i) => (
-								<span
-									key={i}
-									className={`combo-key ${i < fatality.progress ? "done" : ""} ${i === fatality.progress ? "active" : ""}`}
-								>
-									{KEY_LABELS[key]}
-								</span>
-							))}
-						</div>
-					)}
-
-					{!winner && board.includes(null) && !fatality.active && (
-						<div
-							className="timer"
-							style={{ color: timeLeft <= 3 ? "red" : currentPlayer.character.color }}
-						>
-							Time left: 00:{timeLeft < 10 ? `0${timeLeft}` : timeLeft}
-						</div>
-					)}
-
-					<div className={`board ${fatality.active ? "disabled" : ""}`}>
-						{board.map((square, index) => {
-							const squareOwner = square ? players[square] : null;
-							return (
-								<div
-									key={index}
-									className="square"
-									style={{
-										color: squareOwner ? squareOwner.character.color : "#ccc",
-										textShadow: squareOwner
-											? `0 0 10px ${squareOwner.character.shadow}`
-											: "none",
-									}}
-									onClick={() => handleSquareClick(index)}
-								>
-									{square}
-								</div>
-							);
-						})}
-					</div>
-
-					<div className="button-menu">
-						<button onClick={resetBoard}>Reset Board</button>
-						<button onClick={() => setScreen("select")}>New Fighters</button>
-						<button onClick={resetScores} className="danger">
+					<div className="button-row">
+						<button type="button" className="secondary-button" onClick={resetBoard}>
+							Reset Board
+						</button>
+						<button type="button" className="secondary-button" onClick={goToSelect}>
+							New Fighters
+						</button>
+						<button type="button" className="danger-button" onClick={resetScores}>
 							Reset Scores
 						</button>
 					</div>
+				</section>
+			)}
+		</>
+	);
+}
+
+function OnlineView({ game, onSwitchLocal }) {
+	const [joinCode, setJoinCode] = useState("");
+	const [chatDraft, setChatDraft] = useState("");
+	const {
+		connectionStatus,
+		error,
+		room,
+		roomId,
+		localSymbol,
+		isHost,
+		createRoom,
+		joinRoom,
+		leaveRoom,
+		players,
+		canStartMatch,
+		updateName,
+		selectCharacter,
+		toggleLock,
+		startMatch,
+		sendChat,
+		ensureSelectMusic,
+		statusText,
+		statusColor,
+		canContinueRound,
+		showTimer,
+		timeLeft,
+		board,
+		boardFocusSignal,
+		canPlayBoard,
+		playMove,
+		continueRound,
+		fatality,
+		resetBoard,
+		resetScores,
+		returnToLobby,
+	} = game;
+
+	const playerPanels = players ?? null;
+
+	const handleJoinSubmit = (event) => {
+		event.preventDefault();
+		joinRoom(joinCode);
+	};
+
+	const handleSendChat = (event) => {
+		event.preventDefault();
+		if (!chatDraft.trim()) return;
+		sendChat(chatDraft);
+		setChatDraft("");
+	};
+
+	if (!roomId) {
+		return (
+			<section className="screen-shell online-home">
+				<div className="title-block">
+					<h1 className="mk-title">Tic-Tac-Kombat</h1>
+					<p className="mk-subtitle">Realtime multiplayer lobby</p>
 				</div>
+
+				<div className="mode-card-grid">
+					<div className="mode-card">
+						<h2>Create a room</h2>
+						<p>
+							Open a private lobby, lock in as Player 1 (X), and send the invite link to your
+							opponent.
+						</p>
+						<button
+							type="button"
+							className="primary-button"
+							onClick={createRoom}
+							disabled={connectionStatus === "connecting"}
+						>
+							Create Lobby
+						</button>
+					</div>
+
+					<form className="mode-card" onSubmit={handleJoinSubmit}>
+						<h2>Join a room</h2>
+						<p>Paste a room code from your host to join as Player 2 (O).</p>
+						<input
+							className="name-input join-input"
+							type="text"
+							value={joinCode}
+							onChange={(event) => setJoinCode(event.target.value.toUpperCase())}
+							placeholder="Room code"
+							maxLength={8}
+						/>
+						<button
+							type="submit"
+							className="primary-button"
+							disabled={connectionStatus === "connecting" || joinCode.trim().length < 4}
+						>
+							Join Lobby
+						</button>
+					</form>
+				</div>
+
+				{error ? <div className="error-banner">{error}</div> : null}
+
+				<div className="helper-row">
+					<button type="button" className="secondary-button" onClick={onSwitchLocal}>
+						Back to Local Mode
+					</button>
+					<div className="connection-pill">Connection: {connectionStatus}</div>
+				</div>
+			</section>
+		);
+	}
+
+	const inLobby = room?.status === "lobby";
+
+	return (
+		<>
+			<div className={`transition-smoke ${room?.status === "transition" ? "active" : ""}`}>
+				<h2 className="fight-text">FIGHT!</h2>
+			</div>
+
+			<section className="screen-shell online-shell">
+				<div className="top-utility-row">
+					<div className="connection-pill">
+						Room {roomId} | {connectionStatus}
+					</div>
+					<div className="inline-actions">
+						<button type="button" className="secondary-button" onClick={leaveRoom}>
+							Leave Room
+						</button>
+						<button type="button" className="secondary-button" onClick={onSwitchLocal}>
+							Local Mode
+						</button>
+					</div>
+				</div>
+
+				<div className="title-block compact">
+					<h1 className="mk-title">Tic-Tac-Kombat</h1>
+					<p className="mk-subtitle">
+						{inLobby ? "Lobby and fighter select" : "Online versus match"}
+					</p>
+				</div>
+
+				{error ? <div className="error-banner">{error}</div> : null}
+
+				{inLobby ? (
+					<div className="online-layout">
+						<div
+							className="lobby-column"
+							onPointerDownCapture={ensureSelectMusic}
+							onKeyDownCapture={ensureSelectMusic}
+						>
+							<InvitePanel roomId={roomId} />
+							<div className="players-grid">
+								<CharacterSelectPanel
+									player={playerPanels.X}
+									otherPlayer={playerPanels.O}
+									symbol="X"
+									label="Host"
+									isEditable={localSymbol === "X"}
+									onNameChange={updateName}
+									onCharacterSelect={selectCharacter}
+									onToggleLock={toggleLock}
+								/>
+								<CharacterSelectPanel
+									player={playerPanels.O}
+									otherPlayer={playerPanels.X}
+									symbol="O"
+									label="Guest"
+									isEditable={localSymbol === "O"}
+									onNameChange={updateName}
+									onCharacterSelect={selectCharacter}
+									onToggleLock={toggleLock}
+								/>
+							</div>
+
+							<div className="button-row">
+								<button
+									type="button"
+									className="primary-button"
+									onClick={startMatch}
+									disabled={!isHost || !canStartMatch}
+								>
+									{isHost ? "Start Match" : "Waiting for host"}
+								</button>
+								{!canStartMatch ? (
+									<div className="info-banner compact">
+										Both players need to be connected and locked in before the host can start.
+									</div>
+								) : null}
+							</div>
+						</div>
+
+						<ChatPanel
+							title="Lobby chat"
+							messages={room.chatMessages}
+							value={chatDraft}
+							onChange={setChatDraft}
+							onSubmit={handleSendChat}
+							disabled={!localSymbol}
+						/>
+					</div>
+				) : (
+					<div className="online-layout match-layout">
+						<div className="match-column">
+							<Scoreboard players={playerPanels} scores={room.scores} />
+							<StatusBanner
+								statusText={statusText}
+								statusColor={statusColor}
+								showTimer={showTimer}
+								timeLeft={timeLeft}
+							/>
+							<FatalitySequence fatality={fatality} />
+							<GameBoard
+								board={board}
+								players={playerPanels}
+								onSelect={playMove}
+								isDisabled={!canPlayBoard}
+								canContinueRound={canContinueRound}
+								onContinueRound={continueRound}
+								focusSignal={boardFocusSignal}
+							/>
+
+							<div className="button-row">
+								<button
+									type="button"
+									className="secondary-button"
+									onClick={resetBoard}
+									disabled={!isHost}
+								>
+									Next Round
+								</button>
+								<button
+									type="button"
+									className="secondary-button"
+									onClick={returnToLobby}
+									disabled={!isHost}
+								>
+									Return to Lobby
+								</button>
+								<button
+									type="button"
+									className="danger-button"
+									onClick={resetScores}
+									disabled={!isHost}
+								>
+									Reset Scores
+								</button>
+							</div>
+						</div>
+
+						<ChatPanel
+							title="Team chat"
+							messages={room.chatMessages}
+							value={chatDraft}
+							onChange={setChatDraft}
+							onSubmit={handleSendChat}
+							disabled={!localSymbol}
+						/>
+					</div>
+				)}
+			</section>
+		</>
+	);
+}
+
+function App() {
+	const initialRoomId = useMemo(() => {
+		const params = new URLSearchParams(window.location.search);
+		return params.get("room")?.trim().toUpperCase() ?? "";
+	}, []);
+
+	const [mode, setMode] = useState(initialRoomId ? "online" : "local");
+	const localGame = useLocalGame({ enabled: mode === "local" });
+	const onlineGame = useOnlineGame({
+		enabled: mode === "online",
+		initialRoomId,
+	});
+
+	const switchToLocal = () => {
+		if (mode === "online") {
+			onlineGame.leaveRoom();
+		}
+		setMode("local");
+	};
+
+	const switchToOnline = () => {
+		setMode("online");
+	};
+
+	useEffect(() => {
+		const url = new URL(window.location.href);
+
+		if (mode === "online" && onlineGame.roomId) {
+			url.searchParams.set("room", onlineGame.roomId);
+		} else {
+			url.searchParams.delete("room");
+		}
+
+		window.history.replaceState({}, "", url);
+	}, [mode, onlineGame.roomId]);
+
+	const activeFatality = mode === "online" ? onlineGame.fatality?.active : localGame.fatality.active;
+	const activeShake = mode === "online" ? onlineGame.shakeClass : localGame.shakeClass;
+
+	return (
+		<main className={`game-container ${activeShake} ${activeFatality ? "fatality-bg" : ""}`}>
+			<SmokeBackground />
+
+			<div className="mode-switcher" role="tablist" aria-label="Game mode">
+				<button
+					type="button"
+					role="tab"
+					aria-selected={mode === "local"}
+					className={`mode-button ${mode === "local" ? "active" : ""}`}
+					onClick={switchToLocal}
+				>
+					Local
+				</button>
+				<button
+					type="button"
+					role="tab"
+					aria-selected={mode === "online"}
+					className={`mode-button ${mode === "online" ? "active" : ""}`}
+					onClick={switchToOnline}
+				>
+					Online
+				</button>
+			</div>
+
+			{mode === "local" ? (
+				<LocalView game={localGame} />
+			) : (
+				<OnlineView game={onlineGame} onSwitchLocal={switchToLocal} />
 			)}
 		</main>
 	);
