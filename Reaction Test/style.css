@@ -1,0 +1,116 @@
+body {
+	font-family: Arial;
+	text-align: center;
+	min-height: 100vh;
+	margin-top: 1rem;
+}
+
+#instruction {
+	font-size: 2rem;
+}
+
+.controls-row {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	gap: 1rem;
+	margin: 1rem 0;
+}
+
+.controls-row button {
+	padding: 1rem;
+	border-radius: 0.5rem;
+	cursor: pointer;
+	background-color: #34c759;
+	transition: transform 0.2s ease-in-out;
+}
+
+.controls-row button:hover:not(:disabled) {
+	background-color: #28a745;
+	transform: translateY(-5px);
+}
+
+#player-name {
+	padding: 1rem;
+	border-radius: 0.5rem;
+	outline: none;
+}
+
+#player-name:focus {
+	box-shadow: 0 0 20px rgba(4, 131, 216, 0.782);
+}
+
+#player-name:disabled,
+#startBtn:disabled {
+	cursor: not-allowed;
+	background-color: #ccc;
+}
+
+#traffic-lights {
+	display: flex;
+	justify-content: center;
+	gap: 2rem;
+	margin-bottom: 1rem;
+}
+
+#traffic-lights img {
+	width: 100px;
+	height: auto;
+	aspect-ratio: 120 / 320;
+}
+
+.row-container {
+	display: flex;
+	justify-content: center;
+	align-items: flex-start;
+	gap: 1rem;
+	margin: 2rem 1rem;
+}
+#game {
+	min-width: 50%;
+	padding: 2rem;
+	box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+.sidebar {
+	width: 25%;
+	padding: 1rem;
+	box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+.sidebar p,
+.sidebar ul li {
+	text-align: left;
+}
+
+#results-list li {
+	list-style-type: none;
+	padding: 0;
+}
+
+/* Animations */
+@keyframes flash-red {
+	0% {
+		background-color: red;
+	}
+	100% {
+		background-color: transparent;
+	}
+}
+
+@keyframes flash-green {
+	0% {
+		background-color: green;
+	}
+	100% {
+		background-color: transparent;
+	}
+}
+
+.error-flash {
+	animation: flash-red 0.5s ease-out;
+}
+
+.success-flash {
+	animation: flash-green 0.5s ease-out;
+}
