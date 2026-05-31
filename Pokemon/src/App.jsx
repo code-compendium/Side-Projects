@@ -1,9 +1,8 @@
-export function App() {
+import HomePage from "./pages/HomePage";
+export default function App() {
   return (
-    <div>
-      <h1>Pokemon</h1>
-    </div>
+    <>
+      <HomePage />
+    </>
   );
 }
-
-export default App;
