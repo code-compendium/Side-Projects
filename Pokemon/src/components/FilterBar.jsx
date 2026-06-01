@@ -2,7 +2,7 @@ import { useI18n } from "../hooks/useI18n.jsx";
 import { TYPE_COLORS, GENERATIONS } from "../utils/constants";
 
 export default function FilterBar({
-  selectedType,
+  selectedTypes,
   selectedGen,
   onTypeChange,
   onGenChange,
@@ -17,27 +17,30 @@ export default function FilterBar({
         <span className="filter-label">{t("filter.type")}</span>
         <div className="filter-options">
           <button
-            className={`filter-chip ${!selectedType ? "active" : ""}`}
-            onClick={() => onTypeChange("")}
+            className={`filter-chip ${(!selectedTypes || selectedTypes.length === 0) ? "active" : ""}`}
+            onClick={() => onTypeChange("__clear")}
             type="button"
           >
             {t("filter.all")}
           </button>
-          {types.map((type) => (
-            <button
-              key={type}
-              className={`filter-chip ${selectedType === type ? "active" : ""}`}
-              style={
-                selectedType === type
-                  ? { backgroundColor: TYPE_COLORS[type].bg, color: TYPE_COLORS[type].text, borderColor: TYPE_COLORS[type].bg }
-                  : { borderColor: TYPE_COLORS[type].bg, color: TYPE_COLORS[type].bg }
-              }
-              onClick={() => onTypeChange(type)}
-              type="button"
-            >
-              {t(`type.${type}`)}
-            </button>
-          ))}
+          {types.map((type) => {
+            const isActive = selectedTypes && selectedTypes.includes(type);
+            return (
+              <button
+                key={type}
+                className={`filter-chip ${isActive ? "active" : ""}`}
+                style={
+                  isActive
+                    ? { backgroundColor: TYPE_COLORS[type].bg, color: TYPE_COLORS[type].text, borderColor: TYPE_COLORS[type].bg }
+                    : { borderColor: TYPE_COLORS[type].bg, color: TYPE_COLORS[type].bg }
+                }
+                onClick={() => onTypeChange(type)}
+                type="button"
+              >
+                {t(`type.${type}`)}
+              </button>
+            );
+          })}
         </div>
       </div>
 
@@ -64,7 +67,7 @@ export default function FilterBar({
         </div>
       </div>
 
-      {(selectedType || selectedGen) && (
+      {((selectedTypes && selectedTypes.length > 0) || selectedGen) && (
         <button className="filter-clear" onClick={onClear} type="button">
           {t("filter.clear")}
         </button>

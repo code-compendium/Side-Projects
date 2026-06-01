@@ -8,9 +8,9 @@ export function isValidPokemonId(value) {
   if (value === null || value === undefined) return false;
   if (typeof value === "string") {
     const num = Number(value);
-    return Number.isInteger(num) && num > 0 && num <= 1025;
+    return Number.isInteger(num) && num > 0;
   }
-  return Number.isInteger(value) && value > 0 && value <= 1025;
+  return Number.isInteger(value) && value > 0;
 }
 
 export function validatePokemonName(name) {

@@ -13,9 +13,10 @@ import "../styles/home.css";
 
 function getUrlParams() {
   const params = new URLSearchParams(window.location.search);
+  const typeStr = params.get("type") || "";
   return {
     search: params.get("search") || "",
-    type: params.get("type") || "",
+    types: typeStr ? typeStr.split(",") : [],
     gen: params.get("generation") || "",
   };
 }
@@ -31,7 +32,7 @@ export default function HomePage() {
   const [filterLoading, setFilterLoading] = useState(false);
   const initialDataSet = useRef(false);
 
-  const { search: searchParam, type: typeParam, gen: genParam } = getUrlParams();
+  const { search: searchParam, types: typesParam, gen: genParam } = getUrlParams();
 
   const [searchInput, setSearchInput] = useState(searchParam);
   const debouncedSearch = useDebounce(searchInput, 300);
@@ -48,34 +49,46 @@ export default function HomePage() {
   }, [initialData]);
 
   useEffect(() => {
-    const { search: currentSearch } = getUrlParams();
+    const { search: currentSearch, types: currentTypes, gen: currentGen } = getUrlParams();
     if (debouncedSearch !== currentSearch) {
       const params = new URLSearchParams();
       if (debouncedSearch) params.set("search", debouncedSearch);
+      else {
+        if (currentTypes.length > 0) params.set("type", currentTypes.join(","));
+        if (currentGen) params.set("generation", currentGen);
+      }
       navigate(`/?${params.toString()}`, { replace: true });
     }
   }, [debouncedSearch, navigate]);
 
-  const buildFilterUrl = useCallback(({ type, gen }) => {
+  const navigateWithFilters = useCallback(({ types, gen }) => {
     const params = new URLSearchParams();
-    if (type) params.set("type", type);
+    if (types && types.length > 0) params.set("type", types.join(","));
     if (gen) params.set("generation", gen);
-    return `/?${params.toString()}`;
-  }, []);
+    navigate(`/?${params.toString()}`, { replace: true });
+  }, [navigate]);
 
   const handleTypeChange = useCallback((type) => {
     setSearchInput("");
     setFilterLoading(true);
-    const newGen = type === typeParam ? "" : genParam;
-    navigate(buildFilterUrl({ type: type === typeParam ? "" : type, gen: newGen }), { replace: true });
-  }, [buildFilterUrl, typeParam, genParam, navigate]);
+    const currentTypes = typesParam;
+    let newTypes;
+    if (type === "__clear") {
+      newTypes = [];
+    } else if (currentTypes.includes(type)) {
+      newTypes = currentTypes.filter((t) => t !== type);
+    } else {
+      newTypes = [...currentTypes, type];
+    }
+    navigateWithFilters({ types: newTypes, gen: genParam });
+  }, [typesParam, genParam, navigateWithFilters]);
 
   const handleGenChange = useCallback((gen) => {
     setSearchInput("");
     setFilterLoading(true);
-    const newType = gen === genParam ? "" : typeParam;
-    navigate(buildFilterUrl({ type: newType, gen: gen === genParam ? "" : gen }), { replace: true });
-  }, [buildFilterUrl, typeParam, genParam, navigate]);
+    const newGen = gen === genParam ? "" : gen;
+    navigateWithFilters({ types: typesParam, gen: newGen });
+  }, [typesParam, genParam, navigateWithFilters]);
 
   const handleClearFilters = useCallback(() => {
     setSearchInput("");
@@ -97,14 +110,14 @@ export default function HomePage() {
     }
   }, [pokemonList.length, t]);
 
-  const hasActiveFilters = typeParam || genParam;
+  const hasActiveFilters = typesParam.length > 0 || genParam;
   const showLoadMore = hasMore && !searchParam && !hasActiveFilters && pokemonList.length > 0;
 
   return (
     <div className="home-page">
       <SearchBar value={searchInput} onChange={setSearchInput} />
       <FilterBar
-        selectedType={typeParam}
+        selectedTypes={typesParam}
         selectedGen={genParam}
         onTypeChange={handleTypeChange}
         onGenChange={handleGenChange}
