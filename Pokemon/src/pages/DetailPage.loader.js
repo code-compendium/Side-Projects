@@ -42,7 +42,8 @@ export async function detailLoader({ params }) {
   if (!id) throw new Error("Pokemon ID is required");
 
   const pokemon = await getPokemonById(id);
-  const species = await getPokemonSpecies(id);
+  const speciesId = extractIdFromUrl(pokemon.species?.url) || id;
+  const species = await getPokemonSpecies(speciesId);
 
   let evolutionGroups = [];
   if (species.evolution_chain?.url) {

@@ -1,5 +1,7 @@
-import { getPokemonList, getPokemonByName, getPokemonById, getPokemonByType, getGeneration } from "../api/pokemonApi";
-import { PAGE_LIMIT } from "../utils/constants";
+import { getPokemonList, getPokemonByName, getPokemonById, getPokemonByType, getGeneration, fetchWithGuard } from "../api/pokemonApi";
+import { API_BASE_URL, PAGE_LIMIT } from "../utils/constants";
+
+let allPokemonCache = null;
 
 function extractIdFromUrl(url) {
   if (!url) return null;
@@ -76,6 +78,18 @@ async function fetchPokemonByTypes(types, signal) {
   return result;
 }
 
+async function searchPokemon(searchTerm, signal) {
+  if (!allPokemonCache) {
+    const data = await fetchWithGuard(
+      `${API_BASE_URL}/pokemon?limit=2000&offset=0`,
+      { signal }
+    );
+    allPokemonCache = (data.results || []).filter((r) => r?.name && r?.url);
+  }
+  const matches = allPokemonCache.filter((r) => r.name.includes(searchTerm));
+  return fetchPokemonDetails(matches, signal);
+}
+
 export async function homeLoader({ request }) {
   const url = new URL(request.url);
   const search = url.searchParams.get("search")?.trim().toLowerCase() || "";
@@ -86,15 +100,24 @@ export async function homeLoader({ request }) {
   if (search) {
     try {
       const pokemon = await getPokemonByName(search);
-      return {
-        pokemon: pokemon ? [pokemon] : [],
-        total: pokemon ? 1 : 0,
-        hasMore: false,
-        search,
-      };
+      if (pokemon) {
+        return {
+          pokemon: [pokemon],
+          total: 1,
+          hasMore: false,
+          search,
+        };
+      }
     } catch {
-      return { pokemon: [], total: 0, hasMore: false, search };
+      /* exact match failed, fall through to partial search */
     }
+    const matches = await searchPokemon(search, request?.signal);
+    return {
+      pokemon: matches,
+      total: matches.length,
+      hasMore: false,
+      search,
+    };
   }
 
   let allPokemon;
