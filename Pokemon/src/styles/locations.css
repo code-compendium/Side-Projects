@@ -1,0 +1,151 @@
+.locations-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+}
+
+.location-card {
+  display: flex;
+  background: var(--color-surface);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+  text-decoration: none;
+  color: inherit;
+  padding: var(--spacing-md);
+  transition: transform var(--transition), box-shadow var(--transition);
+}
+
+.location-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow);
+}
+
+.location-card.skeleton {
+  pointer-events: none;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.location-card-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.location-card-name {
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.location-card-region {
+  font-size: 0.8rem;
+  color: var(--color-primary);
+  font-weight: 500;
+}
+
+.location-card-areas {
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+}
+
+.location-regions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.location-region-group {
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius);
+  overflow: hidden;
+}
+
+.location-region-header {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  width: 100%;
+  padding: var(--spacing-md);
+  background: var(--color-surface);
+  border: none;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  transition: background var(--transition-fast);
+}
+
+.location-region-header:hover {
+  background: var(--color-surface-hover);
+}
+
+.location-region-header::-webkit-details-marker {
+  display: none;
+}
+
+.location-region-body {
+  padding: var(--spacing-sm);
+  border-top: 1px solid var(--color-border);
+}
+
+.location-region-name {
+  flex: 1;
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.location-region-arrow {
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+  transition: transform var(--transition-fast);
+}
+
+.location-region-arrow.expanded {
+  transform: rotate(180deg);
+}
+
+.location-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm);
+}
+
+.encounter-pokemon-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-sm);
+}
+
+.encounter-pokemon-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px 4px 4px;
+  background: var(--color-surface-hover);
+  border: 1px solid var(--color-border);
+  border-radius: 20px;
+  text-decoration: none;
+  color: inherit;
+  font-size: 0.8rem;
+  font-weight: 500;
+  transition: border-color var(--transition-fast), background var(--transition-fast);
+}
+
+.encounter-pokemon-chip:hover {
+  border-color: var(--color-primary);
+  background: var(--color-surface);
+}
+
+.encounter-pokemon-sprite {
+  width: 32px;
+  height: 32px;
+  image-rendering: pixelated;
+}
+
+@media (max-width: 480px) {
+  .location-grid {
+    grid-template-columns: 1fr;
+  }
+}
