@@ -8,20 +8,26 @@ export default function PokemonPage() {
   const [pokemon, setPokemon] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [hasLoadedInitial, setHasLoadedInitial] = useState(false);
+
+  const [offset, setOffset] = useState(0);
+  const limit = 20;
 
   useEffect(() => {
     async function loadPokemon() {
       try {
         setLoading(true);
         setError(null);
-        const list = await getPokemonList(20);
+        const list = await getPokemonList(limit, offset);
         const detailedPokemon = await Promise.all(
           list.map(async (p) => {
             return await getPokemonDetails(p.url);
           }),
         );
 
-        setPokemon(detailedPokemon);
+        setPokemon((prev) =>
+          offset === 0 ? detailedPokemon : [...prev, ...detailedPokemon],
+        );
       } catch (error) {
         setError(error);
       } finally {
@@ -30,7 +36,7 @@ export default function PokemonPage() {
     }
 
     loadPokemon();
-  }, []);
+  }, [offset]);
 
   if (loading)
     return (
@@ -60,6 +66,7 @@ export default function PokemonPage() {
           />
         ))}
       </ul>
+      <button onClick={() => setOffset((prev) => prev + 20)}>Load more</button>
     </main>
   );
 }
