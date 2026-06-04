@@ -1,0 +1,45 @@
+.skeleton {
+  animation: pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+.card {
+  width: 150px;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+}
+
+.image {
+  width: 100%;
+  height: 100px;
+  background: #ccc;
+  border-radius: 6px;
+  margin-bottom: 8px;
+}
+
+.line {
+  height: 10px;
+  background: #ccc;
+  margin-bottom: 6px;
+  border-radius: 4px;
+}
+
+.line.short {
+  width: 60%;
+}
+
+.line.long {
+  width: 80%;
+}
